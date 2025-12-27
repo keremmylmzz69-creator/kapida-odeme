@@ -30,9 +30,16 @@ app.post("/order", async (req, res) => {
         body: JSON.stringify({
           order: {
             line_items: [
-              { variant_id: Number(variant_id), quantity: Number(quantity) },
-              { variant_id: Number(cod_fee_variant_id), quantity: 1 }
-            ],
+  {
+    variant_id: Number(variant_id),
+    quantity: Number(quantity)
+  },
+  {
+    title: "Kapıda Ödeme Hizmet Bedeli",
+    quantity: 1,
+    price: "50.00"
+  }
+],
             customer: {
               first_name: name,
               phone: phone
