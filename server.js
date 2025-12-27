@@ -39,16 +39,13 @@ app.post("/order", async (req, res) => {
                 price: "50.00"
               }
             ],
-            customer: {
-              first_name: name,
-              phone: phone
-            },
             shipping_address: {
-              address1: address,
-              phone: phone
+              name: name,
+              phone: phone,
+              address1: address
             },
             financial_status: "pending",
-            note: note || "Kapıda ödeme siparişi"
+            note: `Kapıda ödeme siparişi\nTelefon: ${phone}\nNot: ${note || "-"}`
           }
         })
       }
