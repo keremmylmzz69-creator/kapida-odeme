@@ -1,7 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 
-
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -9,14 +8,21 @@ app.use(bodyParser.json());
 app.post("/order", async (req, res) => {
   console.log("POST /order geldi");
 
-  const {
+  let {
     variant_id,
     quantity,
-    cod_fee_variant_id,
     name,
     phone,
-    address
+    address,
+    note
   } = req.body;
+
+  // 📌 TELEFON TEMİZLEME (ÇOK ÖNEMLİ)
+  const cleanPhone = String(phone || "").replace(/\D/g, "");
+
+  if (!cleanPhone.startsWith("0") || cleanPhone.length !== 11) {
+    return res.status(400).send("Telefon numarası geçersiz");
+  }
 
   try {
     const response = await fetch(
@@ -30,25 +36,25 @@ app.post("/order", async (req, res) => {
         body: JSON.stringify({
           order: {
             line_items: [
-  {
-    variant_id: Number(variant_id),
-    quantity: Number(quantity)
-  },
-  {
-    title: "Kapıda Ödeme Hizmet Bedeli",
-    quantity: 1,
-    price: "50.00"
-  }
-],
+              {
+                variant_id: Number(variant_id),
+                quantity: Number(quantity)
+              },
+              {
+                title: "Kapıda Ödeme Hizmet Bedeli",
+                quantity: 1,
+                price: "50.00"
+              }
+            ],
             customer: {
               first_name: name,
-              phone: phone
+              phone: cleanPhone
             },
             shipping_address: {
               address1: address
             },
             financial_status: "pending",
-            note: "Kapıda ödeme siparişi"
+            note: note || "Kapıda ödeme siparişi"
           }
         })
       }
