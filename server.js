@@ -1,61 +1,65 @@
 const express = require("express");
-const axios = require("axios");
-const cors = require("cors");
+const bodyParser = require("body-parser");
+const fetch = require("node-fetch");
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
-const SHOP = process.env.SHOP;
-const TOKEN = process.env.TOKEN;
+app.post("/order", async (req, res) => {
+  console.log("POST /order geldi");
 
-app.post("/kapida-odeme", async (req, res) => {
+  const {
+    variant_id,
+    quantity,
+    cod_fee_variant_id,
+    name,
+    phone,
+    address
+  } = req.body;
+
   try {
-    const {
-      name,
-      phone,
-      address,
-      city,
-      productVariant,
-      codVariant
-    } = req.body;
-
-    await axios.post(
-      `https://${SHOP}/admin/api/2024-01/draft_orders.json`,
+    const response = await fetch(
+      "https://pipetshop.myshopify.com/admin/api/2024-01/orders.json",
       {
-        draft_order: {
-          line_items: [
-            { variant_id: productVariant, quantity: 1 },
-            { variant_id: codVariant, quantity: 1 }
-          ],
-          shipping_address: {
-            name,
-            phone,
-            address1: address,
-            city,
-            country: "Turkey"
-          },
-          note: "Kapıda Ödeme Siparişi",
-          tags: "Kapıda Ödeme",
-          payment_terms: {
-            payment_terms_name: "Due on receipt"
-          }
-        }
-      },
-      {
+        method: "POST",
         headers: {
-          "X-Shopify-Access-Token": TOKEN,
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+          "X-Shopify-Access-Token": process.env.TOKEN
+        },
+        body: JSON.stringify({
+          order: {
+            line_items: [
+              { variant_id: Number(variant_id), quantity: Number(quantity) },
+              { variant_id: Number(cod_fee_variant_id), quantity: 1 }
+            ],
+            customer: {
+              first_name: name,
+              phone: phone
+            },
+            shipping_address: {
+              address1: address
+            },
+            financial_status: "pending",
+            note: "Kapıda ödeme siparişi"
+          }
+        })
       }
     );
 
-    res.json({ success: true });
+    const data = await response.json();
+    console.log("Shopify cevap:", data);
+
+    res.send("Sipariş alındı, teşekkürler");
   } catch (err) {
-    res.status(500).json({ success: false });
+    console.error(err);
+    res.status(500).send("Hata oluştu");
   }
 });
 
-app.listen(3000, () => {
-  console.log("Kapıda ödeme sistemi çalışıyor");
+app.get("/", (req, res) => {
+  res.send("Kapıda ödeme servis çalışıyor");
 });
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Server çalışıyor:", PORT));
