@@ -8,7 +8,7 @@ app.use(bodyParser.json());
 app.post("/order", async (req, res) => {
   console.log("POST /order geldi");
 
-  let {
+  const {
     variant_id,
     quantity,
     name,
@@ -16,13 +16,6 @@ app.post("/order", async (req, res) => {
     address,
     note
   } = req.body;
-
-  // 📌 TELEFON TEMİZLEME (ÇOK ÖNEMLİ)
-  const cleanPhone = String(phone || "").replace(/\D/g, "");
-
-  if (!cleanPhone.startsWith("0") || cleanPhone.length !== 11) {
-    return res.status(400).send("Telefon numarası geçersiz");
-  }
 
   try {
     const response = await fetch(
@@ -48,10 +41,11 @@ app.post("/order", async (req, res) => {
             ],
             customer: {
               first_name: name,
-              phone: cleanPhone
+              phone: phone
             },
             shipping_address: {
-              address1: address
+              address1: address,
+              phone: phone
             },
             financial_status: "pending",
             note: note || "Kapıda ödeme siparişi"
@@ -62,6 +56,10 @@ app.post("/order", async (req, res) => {
 
     const data = await response.json();
     console.log("Shopify cevap:", data);
+
+    if (data.errors) {
+      return res.status(400).json(data);
+    }
 
     res.send("Sipariş alındı, teşekkürler");
   } catch (err) {
